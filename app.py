@@ -44,8 +44,6 @@ migrate = Migrate(app, db)
 # Este bloco GARANTE que as tabelas sejam criadas se elas ainda não existirem.
 # É crucial para a primeira implantação no Render, já que 'flask db upgrade'
 # não está finalizando a execução automaticamente no ambiente.
-with app.app_context():
-    db.create_all()
 # --- FIM DO BLOCO ESSENCIAL PARA CRIAÇÃO DE TABELAS ---
 
 # --- Configuração do Upload de Imagens ---
