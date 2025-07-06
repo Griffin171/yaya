@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Galeria da Yaya!</title>
+    <link rel="shortcut icon" type="image/x-icon" href="{{ url_for('static', filename='icon.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <h1>Galeria Compartilhada 🎨</h1>
+
+    <div class="header-btn">
+        <button id="toggleUploadFormBtn">+ Novo Desenho</button>
+    </div>
+
+    <div id="upload-area">
+        <h2>Adicionar Novo Desenho</h2>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <input type="file" id="imageUpload" name="image" accept="image/*" required />
+            <input type="text" id="titleInput" name="title" placeholder="Título do desenho (opcional)" />
+            <textarea id="descInput" name="description" placeholder="Descrição do desenho (opcional)"></textarea>
+            <button class="add" type="submit">Adicionar Desenho</button>
+        </form>
+        <div id="message" style="margin-top: 10px; text-align: center; font-weight: bold;"></div>
+    </div>
+
+    <div id="desenhos">
+        <h2>Desenhos</h2>
+        <div id="cardsContainer">
+            {% if images %}
+                {% for image in images %}
+                <div class="card" data-full-src="{{ url_for('static', filename=image.filepath.split('static/')[1]) }}" data-title="{{ image.title }}" data-description="{{ image.description }}">
+                    <img src="{{ url_for('static', filename='uploads/' + image.filename) }}" alt="{{ image.title }}">
+                    <div class="card-title">{{ image.title if image.title else image.filename }}</div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p style="text-align: center; color: #666;">Nenhum desenho ainda. Que tal fazer o primeiro upload?</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="modal" id="imageModal">
+        <div class="modal-content">
+            <img id="modalImg" src="" alt="">
+            <h3 id="modalTitle"></h3>
+            <p id="modalDesc"></p>
+            <button class="close-btn" id="closeModalBtn">Fechar</button>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

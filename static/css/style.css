@@ -1,0 +1,204 @@
+@import url('https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap');
+
+:root {
+  --rosa-claro: #ffe4ec;
+  --rosa-medio: #f9c5d5;
+  --rosa-escuro: #e28ca3;
+  --branco: #fffafc;
+  --cinza-leve: #f0f0f0;
+  --borda-desenho: 2px dashed #e28ca3;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: 'Patrick Hand', cursive;
+  background-color: var(--rosa-claro);
+  margin: 0;
+  padding: 1rem;
+  color: #333;
+}
+
+h1 {
+  text-align: center;
+  color: var(--rosa-escuro);
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.header-btn, .code-entry { /* .code-entry pode ser removido se não for usar, mantido para compatibilidade */
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.header-btn button,
+.code-entry button {
+  font-family: 'Patrick Hand', cursive;
+  padding: 0.6rem 1rem;
+  font-size: 1.2rem;
+  background-color: var(--rosa-escuro);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.header-btn button:hover,
+.code-entry button:hover {
+  background-color: #d45c7a;
+}
+
+.code-entry input {
+  padding: 0.6rem;
+  font-size: 1.1rem;
+  border-radius: 12px;
+  border: 2px dashed #e6a4b4;
+  margin-right: 0.5rem;
+  font-family: 'Patrick Hand', cursive;
+  background-color: var(--cinza-leve);
+}
+
+#upload-area {
+  background-color: var(--branco);
+  padding: 1rem;
+  border-radius: 16px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+  border: var(--borda-desenho);
+  margin-bottom: 1rem;
+  display: none; /* Começa escondido */
+  flex-direction: column;
+  gap: 10px;
+}
+
+input[type="file"], input[type="text"], textarea, button.add {
+  font-family: 'Patrick Hand', cursive;
+  padding: 0.6rem;
+  font-size: 1.1rem;
+  border-radius: 12px;
+  border: 2px dashed #e6a4b4;
+  background-color: var(--cinza-leve);
+}
+
+button.add {
+  background-color: var(--rosa-medio);
+  color: #fff;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+}
+
+button.add:hover {
+  background-color: var(--rosa-escuro);
+}
+
+#desenhos {
+  background-color: var(--branco);
+  padding: 1rem;
+  border-radius: 16px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+  border: var(--borda-desenho);
+  max-height: 300px; /* Considere remover ou ajustar, pois a galeria pode ser maior */
+  overflow-y: auto; /* Considere remover ou ajustar */
+}
+
+#desenhos h2 {
+  margin-top: 0;
+  font-size: 1.4rem;
+  color: var(--rosa-escuro);
+}
+
+#cardsContainer {
+  display: flex;
+  flex-wrap: wrap; /* Permite que os cards quebrem a linha */
+  justify-content: center; /* Centraliza os cards */
+  gap: 1rem;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.5rem;
+  background-color: #fff;
+  border-radius: 12px;
+  border: 2px dashed #e6a4b4;
+  box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
+  transition: transform 0.2s;
+  width: 180px; /* Largura fixa para os cards, ajuste se necessário */
+  cursor: pointer; /* Indica que é clicável */
+}
+
+.card:hover {
+  transform: scale(1.02);
+}
+
+.card img {
+  max-width: 100%;
+  max-height: 150px; /* Altura máxima para as imagens na galeria */
+  border-radius: 8px;
+  object-fit: cover; /* Recorta a imagem para preencher o espaço mantendo a proporção */
+}
+
+.card-title {
+  font-size: 1.2rem;
+  margin-top: 0.5rem;
+  color: #d44f73;
+  text-align: center; /* Centraliza o título */
+  word-break: break-word; /* Quebra palavras longas */
+}
+
+.delete-btn { /* Este estilo pode ser removido, pois o botão de excluir foi comentado no HTML */
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: #ff6b81;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.modal {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.7); /* Fundo mais escuro para o modal */
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+}
+
+.modal-content {
+  background: var(--branco);
+  padding: 1rem;
+  border-radius: 16px;
+  max-width: 90%;
+  max-height: 90%;
+  overflow-y: auto;
+  border: var(--borda-desenho);
+  text-align: center; /* Centraliza o conteúdo do modal */
+}
+
+.modal-content img {
+  max-width: 100%;
+  max-height: 60vh; /* Altura máxima para a imagem no modal */
+  border-radius: 12px;
+  object-fit: contain; /* Ajusta a imagem dentro do espaço */
+}
+
+.close-btn {
+  margin-top: 1rem;
+  background-color: #ff8fa3;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: 'Patrick Hand', cursive; /* Mantém a fonte */
+}
