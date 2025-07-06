@@ -202,3 +202,76 @@ button.add:hover {
   cursor: pointer;
   font-family: 'Patrick Hand', cursive; /* Mantém a fonte */
 }
+
+/* Estilos para o botão de exclusão (o "X") */
+.delete-btn {
+    position: absolute;
+    top: 5px;
+    right: 8px;
+    font-size: 24px;
+    font-weight: bold;
+    color: #ff0000; /* Vermelho para destaque */
+    cursor: pointer;
+    opacity: 0.7; /* Começa um pouco transparente */
+    transition: opacity 0.2s ease-in-out;
+    z-index: 10; /* Garante que fique por cima da imagem */
+    background-color: rgba(255, 255, 255, 0.7); /* Fundo semi-transparente para o X */
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1; /* Alinha o X no centro */
+    padding-bottom: 2px; /* Pequeno ajuste visual */
+}
+
+.delete-btn:hover {
+    opacity: 1; /* Fica opaco ao passar o mouse */
+    color: #cc0000; /* Um tom mais escuro de vermelho */
+}
+
+/* Estilos para o contêiner de informações do cartão */
+.card-info {
+    padding: 5px 10px; /* Espaçamento interno */
+    text-align: center;
+}
+
+/* Estilos para o título do cartão */
+.card-title {
+    font-family: 'Comic Sans MS', cursive, sans-serif; /* Exemplo de fonte divertida */
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #333;
+    margin-top: 5px;
+    white-space: nowrap; /* Evita quebras de linha no título */
+    overflow: hidden; /* Esconde o excesso */
+    text-overflow: ellipsis; /* Adiciona "..." se o texto for muito longo */
+}
+
+/* Estilos para a descrição do cartão */
+.card-description {
+    font-family: Arial, sans-serif; /* Fonte mais simples para a descrição */
+    font-size: 0.85em;
+    color: #555;
+    margin-top: 3px;
+    height: 2.5em; /* Limita a altura para 2 linhas aproximadamente */
+    overflow: hidden; /* Esconde o excesso */
+    text-overflow: ellipsis; /* Adiciona "..." */
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+}
+
+/* Estilos para a data de upload */
+.card-date {
+    font-size: 0.75em;
+    color: #888;
+    margin-top: 5px;
+    display: block; /* Garante que a data fique em sua própria linha */
+}
+
+/* Ajuste para o .card para acomodar o botão de exclusão */
+.card {
+    position: relative; /* Importante para posicionar o delete-btn absolutamente */
+    /* ... outros estilos que você já tem para .card ... */
+}

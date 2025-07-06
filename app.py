@@ -93,6 +93,40 @@ def index():
     # Passa as imagens (ou lista vazia em caso de erro) para o template HTML
     return render_template('index.html', images=images)
 
+# C:\yaya\app.py
+
+# ... (seu código existente para imports, app config, db setup, Image model, allowed_file function) ...
+
+@app.route('/delete/<int:image_id>', methods=['POST'])
+def delete_image(image_id):
+    """
+    Lida com a exclusão de uma imagem do banco de dados e do sistema de arquivos.
+    """
+    try:
+        image_to_delete = Image.query.get_or_404(image_id) # Encontra a imagem pelo ID ou retorna 404
+
+        # Caminho completo do arquivo da imagem no servidor
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], image_to_delete.filename)
+
+        # Primeiro, tente deletar o arquivo do sistema de arquivos
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            print(f"Arquivo {file_path} removido do sistema de arquivos.")
+        else:
+            print(f"Aviso: Arquivo {file_path} não encontrado no disco para exclusão.")
+
+        # Depois, delete o registro do banco de dados
+        db.session.delete(image_to_delete)
+        db.session.commit()
+
+        return jsonify({'success': True, 'message': 'Desenho excluído com sucesso!'}), 200
+
+    except Exception as e:
+        print(f"Erro ao excluir desenho com ID {image_id}: {e}")
+        return jsonify({'success': False, 'message': 'Erro ao excluir desenho.'}), 500
+
+# ... (o resto do seu app.py, a rota /upload e o bloco if __name__ == '__main__':) ...
+
 @app.route('/upload', methods=['POST'])
 def upload_file():
     """

@@ -136,3 +136,65 @@ document.addEventListener('DOMContentLoaded', () => {
     addCardClickListeners();
 
 });
+
+// ... (seu código existente para upload e toggle do formulário) ...
+
+// Lógica para abrir o modal de imagem
+document.getElementById('cardsContainer').addEventListener('click', function(event) {
+    // Verifica se o clique foi em um card ou em uma imagem dentro de um card
+    let card = event.target.closest('.card');
+    if (card) {
+        // Se o clique foi no botão de exclusão, lida com isso e não abre o modal
+        if (event.target.classList.contains('delete-btn')) {
+            const imageId = event.target.dataset.id;
+            if (confirm('Tem certeza que deseja excluir este desenho? Esta ação não pode ser desfeita.')) {
+                fetch(`/delete/${imageId}`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        // Recarregar a página para mostrar as imagens atualizadas
+                        window.location.reload(); 
+                    } else {
+                        alert('Erro ao excluir desenho: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro na requisição de exclusão:', error);
+                    alert('Ocorreu um erro ao tentar excluir o desenho.');
+                });
+            }
+            return; // Impede que o clique no botão de exclusão também abra o modal
+        }
+
+        // Se o clique não foi no botão de exclusão, abre o modal
+        const imgSrc = card.querySelector('img').src;
+        const imgTitle = card.dataset.title;
+        const imgDesc = card.dataset.description;
+
+        document.getElementById('modalImg').src = imgSrc;
+        document.getElementById('modalTitle').textContent = imgTitle;
+        document.getElementById('modalDesc').textContent = imgDesc;
+        document.getElementById('imageModal').style.display = 'flex';
+    }
+});
+
+// Lógica para fechar o modal
+document.getElementById('closeModalBtn').addEventListener('click', function() {
+    document.getElementById('imageModal').style.display = 'none';
+    document.getElementById('modalImg').src = ''; // Limpa a imagem
+    document.getElementById('modalTitle').textContent = ''; // Limpa o título
+    document.getElementById('modalDesc').textContent = ''; // Limpa a descrição
+});
+
+// Fechar modal ao clicar fora do conteúdo
+document.getElementById('imageModal').addEventListener('click', function(event) {
+    if (event.target === this) { // Se o clique foi diretamente no modal (não no conteúdo)
+        document.getElementById('imageModal').style.display = 'none';
+        document.getElementById('modalImg').src = '';
+        document.getElementById('modalTitle').textContent = '';
+        document.getElementById('modalDesc').textContent = '';
+    }
+});
