@@ -1,8 +1,8 @@
-"""Adiciona public_id e ajusta filepath para Cloudinary
+"""Initial database schema before Cloudinary changes
 
-Revision ID: 9ce3191ca1b0
+Revision ID: efc7b4a4ccab
 Revises: 
-Create Date: 2025-07-06 15:04:41.712229
+Create Date: 2025-07-06 15:39:25.487164
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '9ce3191ca1b0'
+revision = 'efc7b4a4ccab'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -21,13 +21,11 @@ def upgrade():
     op.create_table('image',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('filename', sa.String(length=100), nullable=False),
-    sa.Column('filepath', sa.String(length=300), nullable=False),
-    sa.Column('public_id', sa.String(length=100), nullable=False),
+    sa.Column('filepath', sa.String(length=100), nullable=False),
     sa.Column('title', sa.String(length=100), nullable=True),
     sa.Column('description', sa.Text(), nullable=True),
     sa.Column('upload_date', sa.DateTime(), nullable=True),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('public_id')
+    sa.PrimaryKeyConstraint('id')
     )
     # ### end Alembic commands ###
 
