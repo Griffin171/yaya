@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const titleInput = document.getElementById('titleInput');
     const descInput = document.getElementById('descInput');
     const cardsContainer = document.getElementById('cardsContainer');
-    const noDrawingsMessage = document.getElementById('noDrawingsMessage'); // Referência à mensagem de "nenhum desenho"
+    const noDrawingsMessage = document.getElementById('noDrawingsMessage');
 
     const imageModal = document.getElementById('imageModal');
     const modalImg = document.getElementById('modalImg');
@@ -19,14 +19,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (toggleUploadFormBtn) {
         toggleUploadFormBtn.addEventListener('click', () => {
             uploadArea.style.display = uploadArea.style.display === 'flex' ? 'none' : 'flex';
-            messageDiv.textContent = ''; // Limpa mensagens ao abrir/fechar
+            messageDiv.textContent = '';
         });
     }
 
     // --- Lógica para envio do formulário de upload via AJAX ---
     if (uploadForm) {
         uploadForm.addEventListener('submit', async (event) => {
-            event.preventDefault(); // Impede o envio padrão do formulário
+            event.preventDefault();
 
             const file = imageUploadInput.files[0];
             if (!file) {
@@ -55,18 +55,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     messageDiv.textContent = data.message;
                     messageDiv.style.color = 'green';
 
-                    // Limpa o formulário
                     imageUploadInput.value = '';
                     titleInput.value = '';
                     descInput.value = '';
                     uploadArea.style.display = 'none';
 
-                    // Chamar a função para adicionar a nova imagem e recarregar a galeria
-                    // (ou apenas adicionar a nova imagem se a resposta do servidor retornar todos os dados necessários)
-                    // Para simplificar, vamos recarregar todas as imagens após o upload para garantir consistência.
-                    // Se você quiser uma atualização mais otimizada, pode criar apenas o card da nova imagem com 'data'.
                     loadImages(); // Recarrega todas as imagens após um novo upload
-                    
+
                 } else {
                     messageDiv.textContent = `Erro: ${data.message || 'Ocorreu um erro ao enviar.'}`;
                     messageDiv.style.color = 'red';
@@ -103,22 +98,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Nova Função: Carregar e Renderizar Imagens do Servidor ---
     async function loadImages() {
         try {
-            const response = await fetch('/api/images'); // Nova rota no Flask para buscar todas as imagens
+            const response = await fetch('/api/images');
             if (!response.ok) {
                 throw new Error(`Erro HTTP: ${response.status}`);
             }
-            const images = await response.json(); // Array de objetos de imagem
+            const images = await response.json();
 
             cardsContainer.innerHTML = ''; // Limpa o container antes de adicionar novas imagens
 
             if (images.length === 0) {
-                // Mostra a mensagem "Nenhum desenho ainda." se não houver imagens
                 if (noDrawingsMessage) {
                     cardsContainer.appendChild(noDrawingsMessage);
                     noDrawingsMessage.style.display = 'block';
                 }
             } else {
-                // Esconde a mensagem se houver imagens
                 if (noDrawingsMessage) {
                     noDrawingsMessage.style.display = 'none';
                 }
@@ -135,15 +128,14 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                         </div>
                     `;
-                    cardsContainer.insertAdjacentHTML('beforeend', cardHtml); // Adiciona ao final da galeria
+                    cardsContainer.insertAdjacentHTML('beforeend', cardHtml);
                 });
-                // Re-adiciona os event listeners após todas as imagens serem carregadas
-                addCardClickListeners();
+                // Removida a chamada para addCardClickListeners() aqui,
+                // pois o listener principal no cardsContainer já gerencia os cliques.
             }
 
         } catch (error) {
             console.error('Falha ao carregar imagens:', error);
-            // Opcional: mostrar uma mensagem de erro ao usuário
             cardsContainer.innerHTML = `<p style="text-align: center; color: red;">Erro ao carregar desenhos: ${error.message}</p>`;
         }
     }
@@ -152,11 +144,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Este é o ÚNICO listener para cards, e ele delega a ação.
     cardsContainer.addEventListener('click', (event) => {
         const card = event.target.closest('.card');
-        if (!card) return; // Não é um clique em um card
+        if (!card) return;
 
-        // Se o clique foi no botão de exclusão
         if (event.target.classList.contains('delete-btn')) {
-            const imageId = card.dataset.id; // Pega o ID do card pai
+            const imageId = card.dataset.id;
             if (confirm('Tem certeza que deseja excluir este desenho? Esta ação não pode ser desfeita.')) {
                 fetch(`/delete/${imageId}`, {
                     method: 'POST'
@@ -165,7 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 .then(data => {
                     if (data.success) {
                         alert(data.message);
-                        loadImages(); // Recarrega as imagens após a exclusão
+                        loadImages();
                     } else {
                         alert('Erro ao excluir desenho: ' + data.message);
                     }
@@ -176,7 +167,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
         } else {
-            // Se o clique foi no card, mas não no botão de exclusão, abre o modal
             const src = card.dataset.fullSrc;
             const title = card.dataset.title;
             const description = card.dataset.description;
@@ -185,5 +175,5 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Chamar a função de carregamento de imagens quando a página é carregada ---
-    loadImages(); // Esta é a linha crucial que chama as imagens no início
+    loadImages();
 });
