@@ -1,8 +1,8 @@
 """Initial database schema before Cloudinary changes
 
-Revision ID: efc7b4a4ccab
+Revision ID: e02a42301304
 Revises: 
-Create Date: 2025-07-06 15:39:25.487164
+Create Date: 2025-07-06 15:48:36.030286
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'efc7b4a4ccab'
+revision = 'e02a42301304'
 down_revision = None
 branch_labels = None
 depends_on = None

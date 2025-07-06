@@ -1,8 +1,8 @@
 """Add public_id and adjust filepath for Cloudinary
 
-Revision ID: b1f032e1d529
-Revises: efc7b4a4ccab
-Create Date: 2025-07-06 15:40:34.749881
+Revision ID: 2237be2f7b74
+Revises: e02a42301304
+Create Date: 2025-07-06 15:49:13.505211
 
 """
 from alembic import op
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'b1f032e1d529'
-down_revision = 'efc7b4a4ccab'
+revision = '2237be2f7b74'
+down_revision = 'e02a42301304'
 branch_labels = None
 depends_on = None
 
