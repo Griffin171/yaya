@@ -28,25 +28,7 @@
     <div id="desenhos">
         <h2>Desenhos</h2>
         <div id="cardsContainer">
-            {% if images %}
-                {% for image in images %}
-                <div class="card" data-full-src="{{ url_for('static', filename=image.filepath.split('static/')[1]) }}" data-title="{{ image.title }}" data-description="{{ image.description }}">
-                    <span class="delete-btn" data-id="{{ image.id }}">&times;</span>
-                    
-                    <img src="{{ url_for('static', filename='uploads/' + image.filename) }}" alt="{{ image.title if image.title else image.filename }}">
-                    
-                    <div class="card-info">
-                        <div class="card-title">{{ image.title if image.title else image.filename }}</div>
-                        {% if image.description %}
-                            <div class="card-description">{{ image.description }}</div>
-                        {% endif %}
-                        <small class="card-date">Enviado: {{ image.upload_date.strftime('%Y-%m-%d %H:%M') }}</small>
-                    </div>
-                </div>
-                {% endfor %}
-            {% else %}
-                <p style="text-align: center; color: #666;">Nenhum desenho ainda. Que tal fazer o primeiro upload?</p>
-            {% endif %}
+            <p id="noDrawingsMessage" style="text-align: center; color: #666;">Nenhum desenho ainda. Que tal fazer o primeiro upload?</p>
         </div>
     </div>
 

@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const titleInput = document.getElementById('titleInput');
     const descInput = document.getElementById('descInput');
     const cardsContainer = document.getElementById('cardsContainer');
+    const noDrawingsMessage = document.getElementById('noDrawingsMessage'); // Referência à mensagem de "nenhum desenho"
 
     const imageModal = document.getElementById('imageModal');
     const modalImg = document.getElementById('modalImg');
@@ -36,8 +37,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const formData = new FormData();
             formData.append('image', file);
-            formData.append('title', titleInput.value);       // Adiciona o título
-            formData.append('description', descInput.value); // Adiciona a descrição
+            formData.append('title', titleInput.value);
+            formData.append('description', descInput.value);
 
             messageDiv.textContent = 'Enviando desenho...';
             messageDiv.style.color = 'blue';
@@ -48,9 +49,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: formData
                 });
 
-                const data = await response.json(); // Pega a resposta JSON do Flask
+                const data = await response.json();
 
-                if (response.ok) { // Verifica se a resposta HTTP foi bem-sucedida (código 2xx)
+                if (response.ok) {
                     messageDiv.textContent = data.message;
                     messageDiv.style.color = 'green';
 
@@ -58,28 +59,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     imageUploadInput.value = '';
                     titleInput.value = '';
                     descInput.value = '';
-                    uploadArea.style.display = 'none'; // Esconde o formulário após o sucesso
+                    uploadArea.style.display = 'none';
 
-                    // Adiciona a nova imagem à galeria dinamicamente
-                    // A data de upload será a data atual do cliente para exibição imediata
-                    const uploadDate = new Date().toLocaleDateString('pt-BR');
-                    const newImageHtml = `
-                        <div class="card" data-full-src="${data.image_url}" data-title="${titleInput.value}" data-description="${descInput.value}">
-                            <img src="${data.image_url}" alt="${data.filename}">
-                            <div class="card-title">${titleInput.value || data.filename}</div>
-                            </div>
-                    `;
-
-                    // Se a mensagem "Nenhum desenho ainda." estiver presente, remova-a
-                    const noDrawingsMessage = cardsContainer.querySelector('p');
-                    if (noDrawingsMessage && noDrawingsMessage.textContent.includes('Nenhum desenho ainda.')) {
-                        noDrawingsMessage.remove();
-                    }
-                    cardsContainer.insertAdjacentHTML('afterbegin', newImageHtml); // Adiciona a imagem no início da galeria
-
-                    // Re-adiciona os event listeners para os novos cards
-                    addCardClickListeners();
-
+                    // Chamar a função para adicionar a nova imagem e recarregar a galeria
+                    // (ou apenas adicionar a nova imagem se a resposta do servidor retornar todos os dados necessários)
+                    // Para simplificar, vamos recarregar todas as imagens após o upload para garantir consistência.
+                    // Se você quiser uma atualização mais otimizada, pode criar apenas o card da nova imagem com 'data'.
+                    loadImages(); // Recarrega todas as imagens após um novo upload
+                    
                 } else {
                     messageDiv.textContent = `Erro: ${data.message || 'Ocorreu um erro ao enviar.'}`;
                     messageDiv.style.color = 'red';
@@ -113,40 +100,63 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Função para adicionar listeners de clique aos cards (para o modal)
-    function addCardClickListeners() {
-        document.querySelectorAll('.card').forEach(card => {
-            // Remove o listener anterior para evitar duplicação (se já houver)
-            card.removeEventListener('click', handleCardClick);
-            // Adiciona o novo listener
-            card.addEventListener('click', handleCardClick);
-        });
+    // --- Nova Função: Carregar e Renderizar Imagens do Servidor ---
+    async function loadImages() {
+        try {
+            const response = await fetch('/api/images'); // Nova rota no Flask para buscar todas as imagens
+            if (!response.ok) {
+                throw new Error(`Erro HTTP: ${response.status}`);
+            }
+            const images = await response.json(); // Array de objetos de imagem
+
+            cardsContainer.innerHTML = ''; // Limpa o container antes de adicionar novas imagens
+
+            if (images.length === 0) {
+                // Mostra a mensagem "Nenhum desenho ainda." se não houver imagens
+                if (noDrawingsMessage) {
+                    cardsContainer.appendChild(noDrawingsMessage);
+                    noDrawingsMessage.style.display = 'block';
+                }
+            } else {
+                // Esconde a mensagem se houver imagens
+                if (noDrawingsMessage) {
+                    noDrawingsMessage.style.display = 'none';
+                }
+
+                images.forEach(image => {
+                    const cardHtml = `
+                        <div class="card" data-full-src="${image.filepath}" data-title="${image.title}" data-description="${image.description}" data-id="${image.id}">
+                            <span class="delete-btn" data-id="${image.id}">&times;</span>
+                            <img src="${image.filepath}" alt="${image.title || image.filename}">
+                            <div class="card-info">
+                                <div class="card-title">${image.title || image.filename}</div>
+                                ${image.description ? `<div class="card-description">${image.description}</div>` : ''}
+                                <small class="card-date">Enviado: ${new Date(image.upload_date).toLocaleDateString('pt-BR')}</small>
+                            </div>
+                        </div>
+                    `;
+                    cardsContainer.insertAdjacentHTML('beforeend', cardHtml); // Adiciona ao final da galeria
+                });
+                // Re-adiciona os event listeners após todas as imagens serem carregadas
+                addCardClickListeners();
+            }
+
+        } catch (error) {
+            console.error('Falha ao carregar imagens:', error);
+            // Opcional: mostrar uma mensagem de erro ao usuário
+            cardsContainer.innerHTML = `<p style="text-align: center; color: red;">Erro ao carregar desenhos: ${error.message}</p>`;
+        }
     }
 
-    // Manipulador de clique para os cards
-    function handleCardClick(event) {
-        const card = event.currentTarget; // O card que foi clicado
-        const src = card.dataset.fullSrc;
-        const title = card.dataset.title;
-        const description = card.dataset.description;
-        openModal(src, title, description);
-    }
+    // --- Lógica para adicionar listeners de clique aos cards (para modal e exclusão) ---
+    // Este é o ÚNICO listener para cards, e ele delega a ação.
+    cardsContainer.addEventListener('click', (event) => {
+        const card = event.target.closest('.card');
+        if (!card) return; // Não é um clique em um card
 
-    // Adiciona listeners para os cards existentes na carga inicial da página
-    addCardClickListeners();
-
-});
-
-// ... (seu código existente para upload e toggle do formulário) ...
-
-// Lógica para abrir o modal de imagem
-document.getElementById('cardsContainer').addEventListener('click', function(event) {
-    // Verifica se o clique foi em um card ou em uma imagem dentro de um card
-    let card = event.target.closest('.card');
-    if (card) {
-        // Se o clique foi no botão de exclusão, lida com isso e não abre o modal
+        // Se o clique foi no botão de exclusão
         if (event.target.classList.contains('delete-btn')) {
-            const imageId = event.target.dataset.id;
+            const imageId = card.dataset.id; // Pega o ID do card pai
             if (confirm('Tem certeza que deseja excluir este desenho? Esta ação não pode ser desfeita.')) {
                 fetch(`/delete/${imageId}`, {
                     method: 'POST'
@@ -155,8 +165,7 @@ document.getElementById('cardsContainer').addEventListener('click', function(eve
                 .then(data => {
                     if (data.success) {
                         alert(data.message);
-                        // Recarregar a página para mostrar as imagens atualizadas
-                        window.location.reload(); 
+                        loadImages(); // Recarrega as imagens após a exclusão
                     } else {
                         alert('Erro ao excluir desenho: ' + data.message);
                     }
@@ -166,35 +175,15 @@ document.getElementById('cardsContainer').addEventListener('click', function(eve
                     alert('Ocorreu um erro ao tentar excluir o desenho.');
                 });
             }
-            return; // Impede que o clique no botão de exclusão também abra o modal
+        } else {
+            // Se o clique foi no card, mas não no botão de exclusão, abre o modal
+            const src = card.dataset.fullSrc;
+            const title = card.dataset.title;
+            const description = card.dataset.description;
+            openModal(src, title, description);
         }
+    });
 
-        // Se o clique não foi no botão de exclusão, abre o modal
-        const imgSrc = card.querySelector('img').src;
-        const imgTitle = card.dataset.title;
-        const imgDesc = card.dataset.description;
-
-        document.getElementById('modalImg').src = imgSrc;
-        document.getElementById('modalTitle').textContent = imgTitle;
-        document.getElementById('modalDesc').textContent = imgDesc;
-        document.getElementById('imageModal').style.display = 'flex';
-    }
-});
-
-// Lógica para fechar o modal
-document.getElementById('closeModalBtn').addEventListener('click', function() {
-    document.getElementById('imageModal').style.display = 'none';
-    document.getElementById('modalImg').src = ''; // Limpa a imagem
-    document.getElementById('modalTitle').textContent = ''; // Limpa o título
-    document.getElementById('modalDesc').textContent = ''; // Limpa a descrição
-});
-
-// Fechar modal ao clicar fora do conteúdo
-document.getElementById('imageModal').addEventListener('click', function(event) {
-    if (event.target === this) { // Se o clique foi diretamente no modal (não no conteúdo)
-        document.getElementById('imageModal').style.display = 'none';
-        document.getElementById('modalImg').src = '';
-        document.getElementById('modalTitle').textContent = '';
-        document.getElementById('modalDesc').textContent = '';
-    }
+    // --- Chamar a função de carregamento de imagens quando a página é carregada ---
+    loadImages(); // Esta é a linha crucial que chama as imagens no início
 });
