@@ -150,7 +150,9 @@ def upload_file():
         return jsonify({'success': False, 'message': 'Tipo de arquivo não permitido'}), 400
 
 # --- Inicialização da Aplicação ---
+# --- Inicialização da Aplicação ---
 if __name__ == '__main__':
     with app.app_context():
-        # Dentro deste bloco, 'app' e 'db' são acessíveis.
-        # Ele tenta criar as tabelas do banco de dados (no PostgreSQL no Render,
+        # Cria as tabelas do banco de dados (no PostgreSQL no Render, ou SQLite localmente).
+        db.create_all()
+    app.run(debug=False) # Inicia o servidor Flask em modo de depuração (NÃO USE EM PRODUÇÃO!)
