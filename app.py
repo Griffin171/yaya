@@ -16,9 +16,43 @@ app = Flask(__name__, instance_relative_config=True)
 # Configurações do banco de dados SQLite
 # O banco de dados será salvo no arquivo 'instance/database.db'
 # Usamos os.path.join(app.instance_path, 'database.db') para garantir o caminho absoluto correto
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(app.instance_path, 'database.db')
+# ... (seu código no topo, incluindo 'import os' e 'from dotenv import load_dotenv') ...
+
+# --- Configuração do Flask ---
+app = Flask(__name__, instance_relative_config=True)
+
+# Configuração da URL do banco de dados
+# O Render fornecerá a URL do PostgreSQL através de uma variável de ambiente chamada 'DATABASE_URL'.
+# Para o desenvolvimento local, usaremos o SQLite se essa variável não estiver definida.
+DATABASE_URL = os.getenv('DATABASE_URL')
+
+if DATABASE_URL:
+    # Se a URL começar com 'postgres://' (que é o formato que algumas plataformas como o Render usam),
+    # precisamos mudá-la para 'postgresql+psycopg2://' para que o SQLAlchemy a entenda corretamente.
+    if DATABASE_URL.startswith("postgres://"):
+        DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg2://", 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
+else:
+    # Fallback para SQLite para desenvolvimento local.
+    # Isso permite que você continue testando e desenvolvendo no seu computador sem um PostgreSQL.
+    # Lembre-se que dados salvos no SQLite aqui NÃO irão para o site online automaticamente.
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(app.instance_path, 'database.db')
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+
+# ... (o resto do seu código, Modelos, Funções Auxiliares, Rotas, etc.) ...
+
+# O bloco if __name__ == '__main__': (no final do seu app.py)
+# permanece praticamente o mesmo, mas agora db.create_all() vai tentar criar
+# as tabelas no PostgreSQL se DATABASE_URL estiver definida, ou no SQLite local.
+if __name__ == '__main__':
+    with app.app_context():
+        # Esta linha pode ser menos crítica agora que o Render gerencia a persistência do DB.
+        # No entanto, mantê-la não prejudica e ainda pode ser útil para o ambiente local.
+        # os.makedirs(app.instance_path, exist_ok=True)
+        db.create_all() # Cria as tabelas no DB ativo (SQLite local ou PostgreSQL online)
+    app.run(debug=True)
 
 # Configuração da pasta de uploads
 # A pasta 'uploads' ficará dentro de 'static', que é acessível pelo navegador
