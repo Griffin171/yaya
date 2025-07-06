@@ -1,79 +1,60 @@
 import os
 from flask import Flask, request, redirect, url_for, render_template, jsonify
-from werkzeug.utils import secure_filename # Para nomes de arquivo seguros
+from werkzeug.utils import secure_filename
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-from dotenv import load_dotenv # Para carregar variáveis de ambiente
+from dotenv import load_dotenv
 
-# Carregar variáveis de ambiente do arquivo .env
+# Carregar variáveis de ambiente do arquivo .env (para uso local)
 load_dotenv()
 
 # --- Configuração do Flask ---
 # Usar instance_relative_config=True para que os caminhos relativos de configuração
-# (como o do banco de dados) sejam relativos à pasta 'instance'
-app = Flask(__name__, instance_relative_config=True)
-
-# Configurações do banco de dados SQLite
-# O banco de dados será salvo no arquivo 'instance/database.db'
-# Usamos os.path.join(app.instance_path, 'database.db') para garantir o caminho absoluto correto
-# ... (seu código no topo, incluindo 'import os' e 'from dotenv import load_dotenv') ...
-
-# --- Configuração do Flask ---
+# (como o do banco de dados SQLite para desenvolvimento local) sejam relativos à pasta 'instance'.
 app = Flask(__name__, instance_relative_config=True)
 
 # Configuração da URL do banco de dados
-# O Render fornecerá a URL do PostgreSQL através de uma variável de ambiente chamada 'DATABASE_URL'.
-# Para o desenvolvimento local, usaremos o SQLite se essa variável não estiver definida.
+# O Render (e outras plataformas de hospedagem) fornecerá a URL do PostgreSQL
+# através de uma variável de ambiente chamada 'DATABASE_URL'.
 DATABASE_URL = os.getenv('DATABASE_URL')
 
 if DATABASE_URL:
-    # Se a URL começar com 'postgres://' (que é o formato que algumas plataformas como o Render usam),
-    # precisamos mudá-la para 'postgresql+psycopg2://' para que o SQLAlchemy a entenda corretamente.
+    # Se a URL começar com 'postgres://' (formato comum em algumas plataformas como Render/Heroku),
+    # precisamos mudar para 'postgresql+psycopg2://' para que o SQLAlchemy a entenda corretamente.
     if DATABASE_URL.startswith("postgres://"):
         DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg2://", 1)
     app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 else:
-    # Fallback para SQLite para desenvolvimento local.
-    # Isso permite que você continue testando e desenvolvendo no seu computador sem um PostgreSQL.
-    # Lembre-se que dados salvos no SQLite aqui NÃO irão para o site online automaticamente.
+    # Fallback para SQLite para desenvolvimento local no seu computador.
+    # Isso permite que você continue testando e desenvolvendo sem precisar de um PostgreSQL local.
+    # Dados salvos aqui NÃO irão automaticamente para o site online.
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(app.instance_path, 'database.db')
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# ... (o resto do seu código, Modelos, Funções Auxiliares, Rotas, etc.) ...
-
-# O bloco if __name__ == '__main__': (no final do seu app.py)
-# permanece praticamente o mesmo, mas agora db.create_all() vai tentar criar
-# as tabelas no PostgreSQL se DATABASE_URL estiver definida, ou no SQLite local.
-if __name__ == '__main__':
-    with app.app_context():
-        # Esta linha pode ser menos crítica agora que o Render gerencia a persistência do DB.
-        # No entanto, mantê-la não prejudica e ainda pode ser útil para o ambiente local.
-        # os.makedirs(app.instance_path, exist_ok=True)
-        db.create_all() # Cria as tabelas no DB ativo (SQLite local ou PostgreSQL online)
-    app.run(debug=True)
-
-# Configuração da pasta de uploads
-# A pasta 'uploads' ficará dentro de 'static', que é acessível pelo navegador
-# app.root_path aponta para o diretório raiz do seu aplicativo Flask (C:\yaya, neste caso)
+# Configuração da pasta de uploads de imagens
+# As imagens serão salvas em 'static/uploads' dentro do seu projeto.
+# Em produção no Render, essas imagens são salvas no sistema de arquivos do servidor,
+# mas são voláteis se o servidor for reiniciado ou recriado.
+# Para persistência de arquivos em produção a longo prazo, serviços como S3 (AWS) são usados.
 UPLOAD_FOLDER = os.path.join(app.root_path, 'static', 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True) # Cria a pasta 'static/uploads' se ela não existir
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 *1024 
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # Limite de 16MB para upload
 
-# Extensões de arquivo permitidas
+# Extensões de arquivo permitidas para upload
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
-# Chave secreta para segurança da sessão (importante para ambientes de produção)
-# Use uma chave secreta real e aleatória em produção.
-# Crie um arquivo .env na raiz do seu projeto (C:\yaya\.env) com:
-# FLASK_SECRET_KEY='sua_chave_secreta_aqui_gerada_por_os.urandom(24)'
-app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY', 'sua_chave_secreta_padrao_muito_segura')
+# Chave secreta para segurança da sessão do Flask.
+# Em produção, esta chave DEVE ser carregada de variáveis de ambiente (Render).
+# Em desenvolvimento local, ela pode vir do seu .env.
+# É crucial que ela seja uma string longa e aleatória.
+app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY', 'sua_chave_secreta_padrao_muito_segura_e_longa_para_desenvolvimento_local_mude_em_producao')
 
 # --- Modelo do Banco de Dados ---
-# Define a estrutura da tabela 'image' no seu banco de dados
+# Define a estrutura da tabela 'image' no seu banco de dados (PostgreSQL ou SQLite)
 class Image(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     filename = db.Column(db.String(100), nullable=False)
@@ -100,9 +81,16 @@ def index():
     Renderiza a página principal (index.html) com o formulário de upload
     e exibe todas as imagens salvas no banco de dados, ordenadas pela data de upload.
     """
-    # Consulta todas as imagens no banco de dados, ordenadas da mais recente para a mais antiga
-    images = Image.query.order_by(Image.upload_date.desc()).all()
-    # Passa as imagens para o template HTML
+    try:
+        # Consulta todas as imagens no banco de dados, ordenadas da mais recente para a mais antiga
+        images = Image.query.order_by(Image.upload_date.desc()).all()
+    except Exception as e:
+        # Em caso de erro com o banco de dados (por exemplo, tabelas não criadas ou conexão),
+        # imprime o erro e tenta renderizar a página sem imagens.
+        print(f"Erro ao buscar imagens do banco de dados: {e}")
+        images = [] # Lista vazia para evitar quebra na renderização do template
+
+    # Passa as imagens (ou lista vazia em caso de erro) para o template HTML
     return render_template('index.html', images=images)
 
 @app.route('/upload', methods=['POST'])
@@ -117,37 +105,46 @@ def upload_file():
         return jsonify({'success': False, 'message': 'Nenhum arquivo de imagem enviado'}), 400
 
     file = request.files['image']
-    title = request.form.get('title', '')       # Obtém o título do formulário
-    description = request.form.get('description', '') # Obtém a descrição do formulário
+    # Obtém o título e a descrição do formulário. Se não existirem, usa string vazia.
+    title = request.form.get('title', '')
+    description = request.form.get('description', '')
 
-    # Verifica se um arquivo foi realmente selecionado
+    # Verifica se um arquivo foi realmente selecionado (nome de arquivo não vazio)
     if file.filename == '':
         return jsonify({'success': False, 'message': 'Nenhum arquivo selecionado'}), 400
 
-    # Processa o arquivo se for válido
+    # Processa o arquivo se for válido (permitido pela extensão)
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename) # Garante um nome de arquivo seguro
-        full_path = os.path.join(app.config['UPLOAD_FOLDER'], filename) # Caminho completo para salvar
-        file.save(full_path) # Salva o arquivo no sistema de arquivos
+        full_path = os.path.join(app.config['UPLOAD_FOLDER'], filename) # Caminho completo para salvar o arquivo
+        file.save(full_path) # Salva o arquivo no sistema de arquivos do servidor
 
         # Caminho relativo que será salvo no DB e usado no HTML (ex: static/uploads/minha_imagem.jpg)
+        # O .replace('\\', '/') é para garantir que o caminho use barras frontais,
+        # que funcionam melhor em ambientes web (Linux no Render e HTML).
         relative_filepath = os.path.join('static', 'uploads', filename).replace('\\', '/')
 
-        # Cria uma nova entrada no banco de dados para a imagem
-        new_image = Image(filename=filename, filepath=relative_filepath, title=title, description=description)
-        db.session.add(new_image) # Adiciona a nova imagem à sessão do DB
-        db.session.commit()       # Confirma as mudanças no DB
+        try:
+            # Cria uma nova entrada no banco de dados para a imagem
+            new_image = Image(filename=filename, filepath=relative_filepath, title=title, description=description)
+            db.session.add(new_image) # Adiciona a nova imagem à sessão do DB
+            db.session.commit()       # Confirma as mudanças no DB (salva no PostgreSQL/SQLite)
 
-        # Retorna uma resposta JSON para o frontend (útil para atualizações dinâmicas)
-        image_url = url_for('static', filename=os.path.join('uploads', filename))
-        return jsonify({
-            'success': True,
-            'message': 'Upload realizado com sucesso!',
-            'image_url': image_url,
-            'filename': filename,
-            'title': title, # Inclui o título na resposta
-            'description': description # Inclui a descrição na resposta
-        }), 200
+            # Retorna uma resposta JSON para o frontend (útil para feedback ao usuário)
+            image_url = url_for('static', filename=os.path.join('uploads', filename))
+            return jsonify({
+                'success': True,
+                'message': 'Upload realizado com sucesso!',
+                'image_url': image_url,
+                'filename': filename,
+                'title': title,
+                'description': description
+            }), 200
+        except Exception as e:
+            # Em caso de erro ao salvar no banco de dados, imprime o erro
+            print(f"Erro ao salvar imagem no banco de dados: {e}")
+            # E retorna um erro para o frontend
+            return jsonify({'success': False, 'message': f'Erro ao salvar dados da imagem: {e}'}), 500
     else:
         # Retorna erro se o tipo de arquivo não for permitido
         return jsonify({'success': False, 'message': 'Tipo de arquivo não permitido'}), 400
@@ -155,8 +152,5 @@ def upload_file():
 # --- Inicialização da Aplicação ---
 if __name__ == '__main__':
     with app.app_context():
-        # Cria a pasta 'instance' se ela não existir. Isso é crucial para o database.db.
-        # O app.instance_path já garante o caminho correto para a pasta de instância.
-        # os.makedirs(app.instance_path, exist_ok=True) # Isso é boa prática, mas o Flask já tenta criar ao usar app.instance_path para o DB.
-        db.create_all() # Cria as tabelas do banco de dados se elas ainda não existirem
-    app.run(debug=True) # Inicia o servidor Flask em modo de depuração
+        # Dentro deste bloco, 'app' e 'db' são acessíveis.
+        # Ele tenta criar as tabelas do banco de dados (no PostgreSQL no Render,
